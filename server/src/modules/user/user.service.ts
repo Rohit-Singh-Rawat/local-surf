@@ -1,5 +1,5 @@
 import type { GoogleProfile } from '../../config/passport';
-import { NotFoundError } from '../../lib/app-error';
+import { NotFoundError, ValidationError } from '../../lib/app-error';
 import type { User, UserRepository } from './user.repository';
 
 export class UserService {
@@ -16,11 +16,15 @@ export class UserService {
   }
 
   async upsertFromGoogle(profile: GoogleProfile): Promise<User> {
+    const email = profile.emails?.[0]?.value;
+    if (!email) throw new ValidationError('Google account must have a verified email address');
+
     return this.repo.upsertByGoogleId({
       googleId: profile.id,
-      email: profile.emails?.[0]?.value ?? '',
+      email,
       name: profile.displayName,
       avatar: profile.photos?.[0]?.value ?? null,
     });
   }
 }
+

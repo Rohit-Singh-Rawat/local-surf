@@ -11,7 +11,7 @@ const server = app.listen(env.PORT, () => {
 async function shutdown(signal: string) {
   logger.info({ signal }, 'Shutdown signal received');
 
-  server.close();
+  await new Promise<void>((resolve) => server.close(() => resolve()));
   await queryClient.end({ timeout: 5 });
   redis.disconnect();
 
@@ -26,3 +26,9 @@ process.on('unhandledRejection', (reason) => {
   logger.fatal({ reason }, 'Unhandled rejection — shutting down');
   process.exit(1);
 });
+
+process.on('uncaughtException', (err) => {
+  logger.fatal({ err }, 'Uncaught exception — shutting down');
+  process.exit(1);
+});
+

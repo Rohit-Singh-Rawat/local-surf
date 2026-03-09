@@ -1,5 +1,5 @@
-import type { InferSelectModel } from 'drizzle-orm';
 import type { Request, Response } from 'express';
+import type { InferSelectModel } from 'drizzle-orm';
 import type { files, folders } from '../../db/schema';
 import { success } from '../../lib/api-response';
 import { getAuth } from '../../lib/auth-utils';
@@ -30,6 +30,9 @@ function toFileResponse(f: FileRow) {
   };
 }
 
+/** Extracts a validated route param as a plain string. Zod validate middleware guarantees this. */
+const p = (req: Request, key: string): string => req.params[key] as string;
+
 export class FolderController {
   constructor(private service: FolderService) {}
 
@@ -46,30 +49,30 @@ export class FolderController {
 
   getContents = async (req: Request, res: Response) => {
     const { userId } = getAuth(req);
-    await this.respondWithContents(userId, req.params.id, res);
+    await this.respondWithContents(userId, p(req, 'id'), res);
   };
 
   rename = async (req: Request, res: Response) => {
     const { userId } = getAuth(req);
-    const folder = await this.service.rename(userId, req.params.id, req.body.name);
+    const folder = await this.service.rename(userId, p(req, 'id'), req.body.name as string);
     res.json(success(toFolderResponse(folder)));
   };
 
   delete = async (req: Request, res: Response) => {
     const { userId } = getAuth(req);
-    await this.service.softDelete(userId, req.params.id);
+    await this.service.softDelete(userId, p(req, 'id'));
     res.status(204).send();
   };
 
   restore = async (req: Request, res: Response) => {
     const { userId } = getAuth(req);
-    await this.service.restore(userId, req.params.id);
+    await this.service.restore(userId, p(req, 'id'));
     res.json(success({ restored: true }));
   };
 
   getBreadcrumb = async (req: Request, res: Response) => {
     const { userId } = getAuth(req);
-    const breadcrumb = await this.service.getBreadcrumb(userId, req.params.id);
+    const breadcrumb = await this.service.getBreadcrumb(userId, p(req, 'id'));
     res.json(success(breadcrumb));
   };
 

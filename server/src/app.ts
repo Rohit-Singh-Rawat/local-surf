@@ -9,6 +9,7 @@ import { error as errorResponse } from './lib/api-response';
 import { errorHandler } from './middleware/error-handler';
 import { requestLogger } from './middleware/request-logger';
 import { authRoutes } from './modules/auth/auth.routes';
+import { fileRoutes } from './modules/file/file.routes';
 import { folderRoutes } from './modules/folder/folder.routes';
 import { healthRoutes } from './modules/health/health.routes';
 import { userRoutes } from './modules/user/user.routes';
@@ -23,11 +24,15 @@ app.use(express.json({ limit: '10mb' }));
 app.use(cookieParser());
 app.use(passport.initialize());
 app.use(requestLogger);
+app.get('/', (_, res) => {
+  res.send('Hello World');
+});
 
 app.use('/api/health', healthRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/folders', folderRoutes);
+app.use('/api/files', fileRoutes);
 
 app.use((_req, res) => {
   res.status(404).json(errorResponse('NOT_FOUND', 'Route not found'));

@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { asyncHandler } from '../../lib/async-handler';
+import { hasInvalidPathChars } from '../../lib/validation';
 import { authenticate } from '../../middleware/auth.middleware';
 import { validate } from '../../middleware/validate.middleware';
 import { FolderController } from './folder.controller';
@@ -11,20 +12,12 @@ const repo = new FolderRepository();
 const service = new FolderService(repo);
 const controller = new FolderController(service);
 
-function hasInvalidChars(name: string): boolean {
-  for (const ch of name) {
-    const code = ch.charCodeAt(0);
-    if (code <= 0x1f || code === 0x7f || ch === '/' || ch === '\\') return true;
-  }
-  return false;
-}
-
 const folderName = z
   .string()
   .min(1, 'Folder name is required')
   .max(255)
   .trim()
-  .refine((n) => !hasInvalidChars(n), 'Folder name contains invalid characters')
+  .refine((n) => !hasInvalidPathChars(n), 'Folder name contains invalid characters')
   .refine((n) => n !== '.' && n !== '..', 'Invalid folder name');
 
 const folderIdParam = z.object({ id: z.string().uuid() });

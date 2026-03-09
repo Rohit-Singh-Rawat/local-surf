@@ -5,8 +5,8 @@ import { error as errorResponse } from '../lib/api-response';
 import { AppError } from '../lib/app-error';
 import { logger } from '../lib/logger';
 
-export function errorHandler(err: Error, req: Request, res: Response, _next: NextFunction) {
-  const log = req.log || logger;
+export function errorHandler(err: unknown, req: Request, res: Response, _next: NextFunction) {
+  const log = (req as Request & { log?: typeof logger }).log ?? logger;
 
   if (err instanceof AppError) {
     log.warn({ err, statusCode: err.statusCode }, err.message);
@@ -23,13 +23,16 @@ export function errorHandler(err: Error, req: Request, res: Response, _next: Nex
     return;
   }
 
-  log.error({ err }, 'Unhandled error');
+  // Normalise non-Error throws (strings, plain objects, etc.)
+  const normalised = err instanceof Error ? err : new Error(String(err));
+  log.error({ err: normalised }, 'Unhandled error');
   res
     .status(500)
     .json(
       errorResponse(
         'INTERNAL_ERROR',
-        env.NODE_ENV === 'production' ? 'An unexpected error occurred' : err.message,
+        env.NODE_ENV === 'production' ? 'An unexpected error occurred' : normalised.message,
       ),
     );
 }
+

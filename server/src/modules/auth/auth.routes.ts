@@ -1,6 +1,8 @@
 import { Router } from 'express';
 import passport from 'passport';
+import type { Profile } from 'passport-google-oauth20';
 import { z } from 'zod';
+import { env } from '../../config/env';
 import { error as errorResponse } from '../../lib/api-response';
 import { asyncHandler } from '../../lib/async-handler';
 import { authenticate } from '../../middleware/auth.middleware';
@@ -20,15 +22,38 @@ const refreshBodySchema = z.object({
 });
 
 const router = Router();
+router.get('/google', (_req, res) => {
+  const params = new URLSearchParams({
+    client_id: env.GOOGLE_CLIENT_ID,
+    redirect_uri: env.GOOGLE_CALLBACK_URL,
+    response_type: 'code',
+    scope: 'profile email',
+    access_type: 'offline',
+  });
+  res.redirect(`https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`);
+});
 
-router.get(
-  '/google',
-  passport.authenticate('google', { scope: ['profile', 'email'], session: false }),
-);
 
 router.get(
   '/google/callback',
-  passport.authenticate('google', { session: false, failureRedirect: '/api/auth/failed' }),
+  asyncHandler((req, res, next) => {
+    return new Promise<void>((resolve, reject) => {
+      passport.authenticate(
+        'google',
+        { session: false },
+        (err: Error | null, user: Profile | false) => {
+          if (err) return reject(err);
+          if (!user) {
+            // Auth failed (bad code, revoked access, etc.) — redirect to frontend error page
+            res.redirect(`${env.FRONTEND_URL}/auth/error`);
+            return resolve();
+          }
+          req.user = user;
+          resolve();
+        },
+      )(req, res, next);
+    });
+  }),
   asyncHandler(controller.googleCallback),
 );
 
