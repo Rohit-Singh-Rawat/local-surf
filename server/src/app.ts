@@ -9,6 +9,7 @@ import { error as errorResponse } from './lib/api-response';
 import { errorHandler } from './middleware/error-handler';
 import { requestLogger } from './middleware/request-logger';
 import { authRoutes } from './modules/auth/auth.routes';
+import { folderRoutes } from './modules/folder/folder.routes';
 import { healthRoutes } from './modules/health/health.routes';
 import { userRoutes } from './modules/user/user.routes';
 
@@ -26,6 +27,7 @@ app.use(requestLogger);
 app.use('/api/health', healthRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/folders', folderRoutes);
 
 app.use((_req, res) => {
   res.status(404).json(errorResponse('NOT_FOUND', 'Route not found'));
