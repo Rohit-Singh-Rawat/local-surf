@@ -5,71 +5,108 @@ import {
 } from '@tanstack/react-router'
 import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
 import { TanStackDevtools } from '@tanstack/react-devtools'
-import Footer from '../components/Footer'
-import Header from '../components/Header'
-
-import StoreDevtools from '../lib/demo-store-devtools'
-
-import TanStackQueryProvider from '../integrations/tanstack-query/root-provider'
-
-import TanStackQueryDevtools from '../integrations/tanstack-query/devtools'
-
+import TanStackQueryProvider from '@/integrations/tanstack-query/root-provider'
+import TanStackQueryDevtools from '@/integrations/tanstack-query/devtools'
 import appCss from '../styles.css?url'
-
 import type { QueryClient } from '@tanstack/react-query'
 
-interface MyRouterContext {
+import { authStore } from '@/store/auth'
+
+interface RouterContext {
   queryClient: QueryClient
+  auth: typeof authStore
+  authPromise: Promise<boolean>
 }
 
-const THEME_INIT_SCRIPT = `(function(){try{var stored=window.localStorage.getItem('theme');var mode=(stored==='light'||stored==='dark'||stored==='auto')?stored:'auto';var prefersDark=window.matchMedia('(prefers-color-scheme: dark)').matches;var resolved=mode==='auto'?(prefersDark?'dark':'light'):mode;var root=document.documentElement;root.classList.remove('light','dark');root.classList.add(resolved);if(mode==='auto'){root.removeAttribute('data-theme')}else{root.setAttribute('data-theme',mode)}root.style.colorScheme=resolved;}catch(e){}})();`
+function NotFound() {
+  return (
+    <div className="flex min-h-screen items-center justify-center">
+      <div className="text-center">
+        <h1 className="text-4xl font-normal">404</h1>
+        <p className="mt-2 text-muted-foreground">Page not found</p>
+      </div>
+    </div>
+  )
+}
 
-export const Route = createRootRouteWithContext<MyRouterContext>()({
+export const Route = createRootRouteWithContext<RouterContext>()({
   head: () => ({
     meta: [
-      {
-        charSet: 'utf-8',
-      },
-      {
-        name: 'viewport',
-        content: 'width=device-width, initial-scale=1',
-      },
-      {
-        title: 'TanStack Start Starter',
-      },
+      { charSet: 'utf-8' },
+      { name: 'viewport', content: 'width=device-width, initial-scale=1' },
+      { title: 'LocalSurf — Your files, everywhere.' },
+      { name: 'description', content: 'LocalSurf — Your files, everywhere. Upload, organise and share files from any device. Fast, private cloud storage.' },
+      { name: 'application-name', content: 'LocalSurf' },
+      { name: 'apple-mobile-web-app-title', content: 'LocalSurf' },
+      { name: 'theme-color', content: '#4D00FF' },
+      { name: 'msapplication-TileColor', content: '#4D00FF' },
+      { property: 'og:type', content: 'website' },
+      { property: 'og:title', content: 'LocalSurf — Your files, everywhere.' },
+      { property: 'og:description', content: 'Upload, organise and share files from any device. Fast, private cloud storage.' },
+      { name: 'twitter:card', content: 'summary' },
+      { name: 'twitter:title', content: 'LocalSurf' },
+      { name: 'twitter:description', content: 'Your files, everywhere. Fast, private cloud storage.' },
     ],
     links: [
-      {
-        rel: 'stylesheet',
-        href: appCss,
-      },
+      { rel: 'stylesheet', href: appCss },
+      { rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' },
+      { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' },
+      { rel: 'apple-touch-icon', sizes: '192x192', href: '/logo192.png' },
+      { rel: 'manifest', href: '/site.webmanifest' },
     ],
   }),
+  notFoundComponent: NotFound,
   shellComponent: RootDocument,
 })
 
+import { useEffect } from 'react'
+import { resolveAuth, setAuth, clearAuth } from '@/store/auth'
+import { api } from '@/lib/api'
+import type { AuthUser } from '@/store/auth'
+
 function RootDocument({ children }: { children: React.ReactNode }) {
+  useEffect(() => {
+    const authenticate = async () => {
+      if (authStore.state.accessToken) {
+        return resolveAuth(true)
+      }
+      
+      if (!document.cookie.includes('ls_session=1')) {
+        clearAuth()
+        return resolveAuth(false)
+      }
+
+      try {
+        const user = await api.get<AuthUser>('/api/users/me')
+        const token = authStore.state.accessToken
+        if (token) {
+          setAuth(user, token)
+          resolveAuth(true)
+        } else {
+          clearAuth()
+          resolveAuth(false)
+        }
+      } catch {
+        clearAuth()
+        resolveAuth(false)
+      }
+    }
+
+    authenticate()
+  }, [])
+
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
         <HeadContent />
       </head>
-      <body className="font-sans antialiased [overflow-wrap:anywhere] selection:bg-[rgba(79,184,178,0.24)]">
+      <body className="font-sans antialiased wrap-anywhere selection:bg-[rgba(79,184,178,0.24)]" suppressHydrationWarning>
         <TanStackQueryProvider>
-          <Header />
           {children}
-          <Footer />
           <TanStackDevtools
-            config={{
-              position: 'bottom-right',
-            }}
+            config={{ position: 'bottom-right' }}
             plugins={[
-              {
-                name: 'Tanstack Router',
-                render: <TanStackRouterDevtoolsPanel />,
-              },
-              StoreDevtools,
+              { name: 'Router', render: <TanStackRouterDevtoolsPanel /> },
               TanStackQueryDevtools,
             ]}
           />
