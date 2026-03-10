@@ -47,7 +47,15 @@ export class ShareService {
     const file = await this.fileRepo.findUploadedByIdAndUser(dto.fileId, userId);
     if (!file) throw new NotFoundError('File', dto.fileId);
 
+    const existing = await this.shareRepo.findPublicLinkByFileAndOwner(dto.fileId, userId);
+    if (existing) return existing;
+
     const publicToken = randomBytes(32).toString('base64url');
+
+    const expiresAt = dto.expiresAt ? new Date(dto.expiresAt) : null;
+    if (expiresAt && expiresAt <= new Date()) {
+      throw new ValidationError('expiresAt must be a future date');
+    }
 
     return this.shareRepo.create({
       fileId: dto.fileId,
@@ -56,7 +64,7 @@ export class ShareService {
       isPublic: true,
       publicToken,
       permission: dto.permission,
-      expiresAt: dto.expiresAt ? new Date(dto.expiresAt) : null,
+      expiresAt,
     });
   }
 
@@ -72,11 +80,10 @@ export class ShareService {
     const result = await this.shareRepo.findByPublicToken(token);
     if (!result) throw new NotFoundError('Shared link');
 
-    const viewUrl = await generateViewUrl(result.file.s3Key, result.file.mimeType);
-    const downloadUrl =
-      result.share.permission === 'download'
-        ? await generateDownloadUrl(result.file.s3Key, result.file.name)
-        : null;
+    const [viewUrl, downloadUrl] = await Promise.all([
+      generateViewUrl(result.file.s3Key, result.file.mimeType),
+      generateDownloadUrl(result.file.s3Key, result.file.name),
+    ]);
     return { ...result, viewUrl, downloadUrl };
   }
 
@@ -84,11 +91,10 @@ export class ShareService {
     const result = await this.shareRepo.findByIdAndSharedWith(shareId, userId);
     if (!result) throw new NotFoundError('Shared file');
 
-    const viewUrl = await generateViewUrl(result.file.s3Key, result.file.mimeType);
-    const downloadUrl =
-      result.share.permission === 'download'
-        ? await generateDownloadUrl(result.file.s3Key, result.file.name)
-        : null;
+    const [viewUrl, downloadUrl] = await Promise.all([
+      generateViewUrl(result.file.s3Key, result.file.mimeType),
+      generateDownloadUrl(result.file.s3Key, result.file.name),
+    ]);
     return { ...result, viewUrl, downloadUrl };
   }
 
@@ -106,10 +112,12 @@ export class ShareService {
     const share = await this.shareRepo.findByIdAndOwner(shareId, userId);
     if (!share) throw new NotFoundError('Share', shareId);
 
-    return this.shareRepo.update(shareId, {
-      permission: dto.permission,
-      expiresAt:
-        dto.expiresAt === null ? null : dto.expiresAt ? new Date(dto.expiresAt) : undefined,
-    });
+    const expiresAt =
+      dto.expiresAt === null ? null : dto.expiresAt ? new Date(dto.expiresAt) : undefined;
+    if (expiresAt && expiresAt <= new Date()) {
+      throw new ValidationError('expiresAt must be a future date');
+    }
+
+    return this.shareRepo.update(shareId, { permission: dto.permission, expiresAt });
   }
 }

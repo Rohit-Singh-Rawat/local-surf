@@ -24,6 +24,8 @@ export const files = pgTable(
     folderId: uuid('folder_id').references(() => folders.id),
     name: text('name').notNull(),
     s3Key: text('s3_key').notNull().unique(),
+    /** Present only while a multipart upload is in-progress. */
+    s3UploadId: text('s3_upload_id'),
     mimeType: text('mime_type').notNull(),
     size: bigint('size', { mode: 'number' }).notNull(),
     status: fileStatusEnum('status').notNull().default('pending'),

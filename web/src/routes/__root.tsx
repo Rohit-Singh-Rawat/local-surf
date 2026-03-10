@@ -10,6 +10,7 @@ import type { QueryClient } from '@tanstack/react-query'
 import { authStore, resolveAuth, setAuth, clearAuth } from '@/store/auth'
 import { api } from '@/lib/api'
 import type { AuthUser } from '@/store/auth'
+import { UploadsTray } from '@/components/drive/UploadsTray'
 
 interface RouterContext {
   queryClient: QueryClient
@@ -97,6 +98,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
       <body className="font-sans antialiased wrap-anywhere selection:bg-[rgba(79,184,178,0.24)]" suppressHydrationWarning>
         <TanStackQueryProvider>
           {children}
+          <UploadsTray />
           {DevTools && (
             <Suspense>
               <DevTools />

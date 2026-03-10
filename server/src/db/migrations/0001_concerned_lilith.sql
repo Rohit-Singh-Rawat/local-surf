@@ -1,0 +1,1 @@
+ALTER TABLE "files" ADD COLUMN "s3_upload_id" text;

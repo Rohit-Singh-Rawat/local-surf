@@ -59,6 +59,17 @@ export class ShareRepository {
     return share;
   }
 
+  /** Existing public link for this file by this owner, if any. */
+  async findPublicLinkByFileAndOwner(fileId: string, ownerId: string): Promise<Share | undefined> {
+    const [share] = await db
+      .select()
+      .from(shares)
+      .where(
+        and(eq(shares.fileId, fileId), eq(shares.ownerId, ownerId), eq(shares.isPublic, true)),
+      );
+    return share;
+  }
+
   async findByPublicToken(token: string) {
     const now = new Date();
     const [row] = await db

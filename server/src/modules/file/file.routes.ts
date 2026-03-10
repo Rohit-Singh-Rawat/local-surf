@@ -35,6 +35,19 @@ const uploadBody = z.object({
   size: z.number().int().positive().max(MAX_FILE_SIZE),
 });
 
+const multipartCompleteBody = z.object({
+  uploadId: z.string().min(1),
+  parts: z
+    .array(
+      z.object({
+        partNumber: z.number().int().min(1).max(10_000),
+        etag: z.string().min(1).max(200),
+      }),
+    )
+    .min(1)
+    .max(10_000),
+});
+
 const renameBody = z.object({ name: fileName });
 
 const searchQuery = z.object({
@@ -65,6 +78,17 @@ router.post(
   '/:id/confirm',
   validate({ params: fileIdParam }),
   asyncHandler(controller.confirmUpload),
+);
+
+router.post(
+  '/:id/complete',
+  validate({ params: fileIdParam, body: multipartCompleteBody }),
+  asyncHandler(controller.completeMultipart),
+);
+router.post(
+  '/:id/abort',
+  validate({ params: fileIdParam }),
+  asyncHandler(controller.abortMultipart),
 );
 router.get('/:id', validate({ params: fileIdParam }), asyncHandler(controller.getById));
 router.get(

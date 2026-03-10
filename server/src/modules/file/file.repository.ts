@@ -57,6 +57,7 @@ export class FileRepository {
     folderId: string | null;
     name: string;
     s3Key: string;
+    s3UploadId?: string | null;
     mimeType: string;
     size: number;
   }): Promise<FileRow> {
@@ -85,7 +86,7 @@ export class FileRepository {
     return db.transaction(async (tx) => {
       const [file] = await tx
         .update(files)
-        .set({ status: 'uploaded', size: actualSize })
+        .set({ status: 'uploaded', size: actualSize, s3UploadId: null })
         .where(and(eq(files.id, fileId), eq(files.userId, userId), eq(files.status, 'pending')))
         .returning();
 
@@ -98,6 +99,17 @@ export class FileRepository {
 
       return file;
     });
+  }
+
+  async deletePendingByIdAndUser(
+    id: string,
+    userId: string,
+  ): Promise<Pick<FileRow, 'id' | 's3Key' | 's3UploadId'> | undefined> {
+    const [file] = await db
+      .delete(files)
+      .where(and(eq(files.id, id), eq(files.userId, userId), eq(files.status, 'pending')))
+      .returning({ id: files.id, s3Key: files.s3Key, s3UploadId: files.s3UploadId });
+    return file;
   }
 
   async softDelete(id: string, userId: string): Promise<void> {

@@ -4,6 +4,7 @@ import { FolderPlus, Loader2, Upload } from 'lucide-react'
 import { useRef, useState } from 'react'
 import { api } from '@/lib/api'
 import { driveKeys } from '@/lib/drive-queries'
+import { uploadFile } from '@/lib/file-upload'
 import { toast } from '@/store/toast'
 import { NewFolderDialog } from './NewFolderDialog'
 
@@ -37,28 +38,16 @@ export function NewButton() {
   })
 
   const upload = useMutation({
-    mutationFn: async (file: File) => {
-      const { uploadUrl, file: createdFile } = await api.post<{ uploadUrl: string; file: { id: string } }>(
-        '/api/files/upload',
-        {
-          name: file.name,
-          mimeType: file.type || 'application/octet-stream',
-          size: file.size,
-          ...(folderId ? { folderId } : {}),
-        },
-      )
-      
-      const uploadRes = await fetch(uploadUrl, { method: 'PUT', body: file, headers: { 'Content-Type': file.type } })
-      if (!uploadRes.ok) throw new Error('S3 upload failed')
-
-      await api.post(`/api/files/${createdFile.id}/confirm`)
-    },
-    onSuccess: () => {
+    mutationFn: (file: File) => uploadFile(file, folderId),
+    onSuccess: (name) => {
       qc.invalidateQueries({ queryKey: parentQueryKey })
       qc.invalidateQueries({ queryKey: driveKeys.me() })
-      toast('File uploaded', 'success')
+      toast(`${name} uploaded`, 'success')
     },
-    onError: () => toast('Upload failed', 'error'),
+    onError: (err) => {
+      if (import.meta.env.DEV) console.error('[NewButton] Upload failed:', err)
+      toast('Upload failed', 'error')
+    },
   })
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
