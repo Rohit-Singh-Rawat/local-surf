@@ -5,6 +5,8 @@ const envSchema = z.object({
   PORT: z.coerce.number().default(8000),
   DATABASE_URL: z.string().min(1, 'DATABASE_URL is required'),
   REDIS_URL: z.string().default('redis://localhost:6379'),
+  /** Set to true to log every SQL query (adds latency in dev). */
+  LOG_SQL: z.coerce.boolean().default(false),
   CORS_ORIGIN: z.string().default('http://localhost:5173'),
   FRONTEND_URL: z.string().default('http://localhost:5173'),
 
@@ -18,6 +20,7 @@ const envSchema = z.object({
   AWS_ACCESS_KEY_ID: z.string().min(1, 'AWS_ACCESS_KEY_ID is required'),
   AWS_SECRET_ACCESS_KEY: z.string().min(1, 'AWS_SECRET_ACCESS_KEY is required'),
   S3_BUCKET: z.string().min(1, 'S3_BUCKET is required'),
+  S3_ENDPOINT: z.string().min(1, 'S3_ENDPOINT is required'),
 });
 
 const parsed = envSchema.safeParse(process.env);

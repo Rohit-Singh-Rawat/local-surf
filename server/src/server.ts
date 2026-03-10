@@ -4,8 +4,14 @@ import { env } from './config/env';
 import { redis } from './config/redis';
 import { logger } from './lib/logger';
 
-const server = app.listen(env.PORT, () => {
+const server = app.listen(env.PORT, async () => {
   logger.info({ port: env.PORT, env: env.NODE_ENV }, 'Server started');
+  try {
+    await queryClient`SELECT 1`;
+    logger.info('DB pool warmed');
+  } catch (err) {
+    logger.warn({ err }, 'DB warmup failed — first request may be slow');
+  }
 });
 
 async function shutdown(signal: string) {
@@ -31,4 +37,3 @@ process.on('uncaughtException', (err) => {
   logger.fatal({ err }, 'Uncaught exception — shutting down');
   process.exit(1);
 });
-

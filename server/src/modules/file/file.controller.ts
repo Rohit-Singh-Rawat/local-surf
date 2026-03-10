@@ -34,10 +34,22 @@ export class FileController {
     res.json(success(toFileResponse(file)));
   };
 
+  getById = async (req: Request, res: Response) => {
+    const { userId } = getAuth(req);
+    const file = await this.service.getById(userId, p(req, 'id'));
+    res.json(success(toFileResponse(file)));
+  };
+
   getDownloadUrl = async (req: Request, res: Response) => {
     const { userId } = getAuth(req);
     const { file, downloadUrl } = await this.service.getDownloadUrl(userId, p(req, 'id'));
     res.json(success({ file: toFileResponse(file), downloadUrl }));
+  };
+
+  getViewUrl = async (req: Request, res: Response) => {
+    const { userId } = getAuth(req);
+    const { file, viewUrl } = await this.service.getViewUrl(userId, p(req, 'id'));
+    res.json(success({ file: toFileResponse(file), viewUrl }));
   };
 
   rename = async (req: Request, res: Response) => {
@@ -60,7 +72,9 @@ export class FileController {
 
   search = async (req: Request, res: Response) => {
     const { userId } = getAuth(req);
-    const files = await this.service.search(userId, req.query.q as string);
+    const query = (req as import('../../middleware/validate.middleware').ValidatedRequest).validated?.query as { q: string } | undefined;
+    const q = query?.q ?? (req.query.q as string);
+    const files = await this.service.search(userId, q);
     res.json(success(files.map(toFileResponse)));
   };
 }

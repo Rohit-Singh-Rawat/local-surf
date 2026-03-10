@@ -21,7 +21,10 @@ const folderName = z
   .refine((n) => n !== '.' && n !== '..', 'Invalid folder name');
 
 const folderIdParam = z.object({ id: z.string().uuid() });
-const createBody = z.object({ name: folderName, parentId: z.string().uuid().optional() });
+const createBody = z.object({
+  name: folderName,
+  parentId: z.string().uuid().optional().nullable().transform((v) => v ?? undefined),
+});
 const renameBody = z.object({ name: folderName });
 
 const router = Router();

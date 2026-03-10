@@ -12,6 +12,8 @@ import { authRoutes } from './modules/auth/auth.routes';
 import { fileRoutes } from './modules/file/file.routes';
 import { folderRoutes } from './modules/folder/folder.routes';
 import { healthRoutes } from './modules/health/health.routes';
+import { shareRoutes } from './modules/share/share.routes';
+import { trashRoutes } from './modules/trash/trash.routes';
 import { userRoutes } from './modules/user/user.routes';
 
 const app = express();
@@ -33,6 +35,8 @@ app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/folders', folderRoutes);
 app.use('/api/files', fileRoutes);
+app.use('/api/shares', shareRoutes);
+app.use('/api/trash', trashRoutes);
 
 app.use((_req, res) => {
   res.status(404).json(errorResponse('NOT_FOUND', 'Route not found'));

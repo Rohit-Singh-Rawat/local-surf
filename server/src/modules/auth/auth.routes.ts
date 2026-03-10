@@ -6,6 +6,7 @@ import { env } from '../../config/env';
 import { error as errorResponse } from '../../lib/api-response';
 import { asyncHandler } from '../../lib/async-handler';
 import { authenticate } from '../../middleware/auth.middleware';
+import { rateLimit } from '../../middleware/rate-limit.middleware';
 import { validate } from '../../middleware/validate.middleware';
 import { UserRepository } from '../user/user.repository';
 import { UserService } from '../user/user.service';
@@ -21,7 +22,12 @@ const refreshBodySchema = z.object({
   refreshToken: z.string().optional(),
 });
 
+const authRateLimit = rateLimit({ windowMs: 60_000, max: 20, keyPrefix: 'auth' });
+
 const router = Router();
+
+router.use(authRateLimit);
+
 router.get('/google', (_req, res) => {
   const params = new URLSearchParams({
     client_id: env.GOOGLE_CLIENT_ID,
@@ -33,7 +39,6 @@ router.get('/google', (_req, res) => {
   res.redirect(`https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`);
 });
 
-
 router.get(
   '/google/callback',
   asyncHandler((req, res, next) => {
@@ -44,12 +49,12 @@ router.get(
         (err: Error | null, user: Profile | false) => {
           if (err) return reject(err);
           if (!user) {
-            // Auth failed (bad code, revoked access, etc.) — redirect to frontend error page
             res.redirect(`${env.FRONTEND_URL}/auth/error`);
             return resolve();
           }
           req.user = user;
           resolve();
+          next();
         },
       )(req, res, next);
     });

@@ -4,6 +4,7 @@ import { asyncHandler } from '../../lib/async-handler';
 import { MAX_FILE_SIZE } from '../../lib/constants';
 import { hasInvalidPathChars } from '../../lib/validation';
 import { authenticate } from '../../middleware/auth.middleware';
+import { rateLimit } from '../../middleware/rate-limit.middleware';
 import { validate } from '../../middleware/validate.middleware';
 import { FolderRepository } from '../folder/folder.repository';
 import { UserRepository } from '../user/user.repository';
@@ -46,17 +47,35 @@ router.use(authenticate);
 
 router.get('/search', validate({ query: searchQuery }), asyncHandler(controller.search));
 
-router.post('/upload', validate({ body: uploadBody }), asyncHandler(controller.initiateUpload));
+const uploadRateLimit = rateLimit({
+  windowMs: 60_000,
+  max: 30,
+  keyPrefix: 'upload',
+  keyGenerator: (req) => req.auth?.userId ?? req.ip ?? 'unknown',
+});
+
+router.post(
+  '/upload',
+  uploadRateLimit,
+  validate({ body: uploadBody }),
+  asyncHandler(controller.initiateUpload),
+);
 
 router.post(
   '/:id/confirm',
   validate({ params: fileIdParam }),
   asyncHandler(controller.confirmUpload),
 );
+router.get('/:id', validate({ params: fileIdParam }), asyncHandler(controller.getById));
 router.get(
   '/:id/download',
   validate({ params: fileIdParam }),
   asyncHandler(controller.getDownloadUrl),
+);
+router.get(
+  '/:id/view',
+  validate({ params: fileIdParam }),
+  asyncHandler(controller.getViewUrl),
 );
 router.patch(
   '/:id',

@@ -1,5 +1,5 @@
-import type { Request, Response } from 'express';
 import type { InferSelectModel } from 'drizzle-orm';
+import type { Request, Response } from 'express';
 import type { files, folders } from '../../db/schema';
 import { success } from '../../lib/api-response';
 import { getAuth } from '../../lib/auth-utils';

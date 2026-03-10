@@ -23,7 +23,6 @@ export class AuthController {
   googleCallback = async (req: Request, res: Response) => {
     const profile = req.user as Profile;
     const { accessToken, refreshToken } = await this.authService.handleGoogleAuth(profile);
-
     res.cookie(REFRESH_COOKIE, refreshToken, COOKIE_OPTIONS);
     res.redirect(`${env.FRONTEND_URL}/auth/callback?token=${encodeURIComponent(accessToken)}`);
   };

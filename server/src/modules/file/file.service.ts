@@ -1,4 +1,4 @@
-import { generateDownloadUrl, generateUploadUrl, headObject } from '../../config/s3';
+import { generateDownloadUrl, generateUploadUrl, generateViewUrl, headObject } from '../../config/s3';
 import {
   ConflictError,
   NotFoundError,
@@ -92,11 +92,24 @@ export class FileService {
     return confirmed;
   }
 
+  async getById(userId: string, fileId: string): Promise<FileRow> {
+    const file = await this.fileRepo.findByIdAndUser(fileId, userId);
+    if (!file) throw new NotFoundError('File', fileId);
+    return file;
+  }
+
   async getDownloadUrl(userId: string, fileId: string) {
-    const file = await this.fileRepo.findUploadedByIdAndUser(fileId, userId);
+    const file = await this.fileRepo.findByIdAndUser(fileId, userId);
     if (!file) throw new NotFoundError('File', fileId);
     const downloadUrl = await generateDownloadUrl(file.s3Key, file.name);
     return { file, downloadUrl };
+  }
+
+  async getViewUrl(userId: string, fileId: string) {
+    const file = await this.fileRepo.findByIdAndUser(fileId, userId);
+    if (!file) throw new NotFoundError('File', fileId);
+    const viewUrl = await generateViewUrl(file.s3Key, file.mimeType);
+    return { file, viewUrl };
   }
 
   async rename(userId: string, fileId: string, name: string): Promise<FileRow> {

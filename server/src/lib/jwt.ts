@@ -20,5 +20,10 @@ export async function signAccessToken(userId: string, email: string): Promise<st
 
 export async function verifyAccessToken(token: string): Promise<TokenPayload> {
   const { payload } = await jwtVerify(token, accessSecret);
+
+  if (typeof payload.sub !== 'string' || typeof payload.email !== 'string') {
+    throw new Error('Malformed token payload: missing sub or email');
+  }
+
   return payload as TokenPayload;
 }

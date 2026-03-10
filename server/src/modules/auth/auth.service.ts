@@ -15,9 +15,7 @@ export class AuthService {
     const user = await this.userService.upsertFromGoogle(profile);
     const accessToken = await signAccessToken(user.id, user.email);
     const refreshToken = this.generateOpaqueToken();
-
     await this.persistRefreshToken(user.id, refreshToken);
-
     return { accessToken, refreshToken, user };
   }
 

@@ -1,5 +1,5 @@
 import type { InferSelectModel } from 'drizzle-orm';
-import { and, eq, ilike, sql } from 'drizzle-orm';
+import { and, eq, ilike, or, sql } from 'drizzle-orm';
 import { db } from '../../config/db';
 import { files, users } from '../../db/schema';
 import { escapeLikePattern } from '../../lib/validation';
@@ -9,6 +9,21 @@ export type FileRow = InferSelectModel<typeof files>;
 export class FileRepository {
   async findById(id: string): Promise<FileRow | undefined> {
     const [file] = await db.select().from(files).where(eq(files.id, id));
+    return file;
+  }
+
+  /** File owned by user with status uploaded or trashed (for view/download). */
+  async findByIdAndUser(id: string, userId: string): Promise<FileRow | undefined> {
+    const [file] = await db
+      .select()
+      .from(files)
+      .where(
+        and(
+          eq(files.id, id),
+          eq(files.userId, userId),
+          or(eq(files.status, 'uploaded'), eq(files.status, 'trashed')),
+        ),
+      );
     return file;
   }
 

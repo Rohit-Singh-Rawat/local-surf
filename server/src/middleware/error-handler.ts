@@ -23,7 +23,14 @@ export function errorHandler(err: unknown, req: Request, res: Response, _next: N
     return;
   }
 
-  // Normalise non-Error throws (strings, plain objects, etc.)
+  // Express/body-parser errors carry a numeric `status` (e.g. 400 for malformed JSON).
+  // Surface them with their intended status instead of masking as 500.
+  if (err instanceof SyntaxError && 'status' in err && typeof err.status === 'number') {
+    log.warn({ err, statusCode: err.status }, err.message);
+    res.status(err.status).json(errorResponse('BAD_REQUEST', 'Malformed request body'));
+    return;
+  }
+
   const normalised = err instanceof Error ? err : new Error(String(err));
   log.error({ err: normalised }, 'Unhandled error');
   res
@@ -35,4 +42,3 @@ export function errorHandler(err: unknown, req: Request, res: Response, _next: N
       ),
     );
 }
-

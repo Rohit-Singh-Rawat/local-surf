@@ -4,7 +4,7 @@ import { logger } from '../lib/logger';
 
 const isDev = env.NODE_ENV === 'development';
 
-const SENSITIVE_KEYS = new Set(['password', 'token', 'secret', 'authorization', 'refreshToken']);
+const SENSITIVE_KEYS = new Set(['password', 'token', 'secret', 'authorization', 'refreshtoken']);
 
 function sanitiseBody(body: unknown): unknown {
   if (!body || typeof body !== 'object' || Array.isArray(body)) return body;
@@ -17,29 +17,27 @@ function sanitiseBody(body: unknown): unknown {
 }
 
 export const requestLogger: RequestHandler = (req, res, next) => {
-  if (!isDev) return next();
-
   const start = process.hrtime.bigint();
-  const hitAt = new Date();
 
   res.on('finish', () => {
     const durationMs = Number(process.hrtime.bigint() - start) / 1_000_000;
 
-    logger.info(
-      {
-        method: req.method,
-        url: req.originalUrl || req.url,
-        statusCode: res.statusCode,
-        durationMs: Math.round(durationMs * 100) / 100,
-        hitAt: hitAt.toISOString(),
-        ip: req.ip,
-        userAgent: req.get('user-agent'),
-        body: sanitiseBody(req.body),
-      },
-      'HTTP request',
-    );
+    const payload: Record<string, unknown> = {
+      method: req.method,
+      url: req.originalUrl || req.url,
+      statusCode: res.statusCode,
+      durationMs: Math.round(durationMs * 100) / 100,
+    };
+
+    if (isDev) {
+      payload.ip = req.ip;
+      payload.userAgent = req.get('user-agent');
+      payload.body = sanitiseBody(req.body);
+    }
+
+    const level = res.statusCode >= 500 ? 'error' : res.statusCode >= 400 ? 'warn' : 'info';
+    logger[level](payload, 'HTTP request');
   });
 
   next();
 };
-
