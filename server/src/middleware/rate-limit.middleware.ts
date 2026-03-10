@@ -10,12 +10,14 @@ interface RateLimitOptions {
   keyGenerator?: (req: Request) => string;
 }
 
+// Returns [count, pttl_ms] so we can emit X-RateLimit-Reset without a second round-trip.
 const LUA_SCRIPT = `
 local current = redis.call('INCR', KEYS[1])
 if current == 1 then
   redis.call('PEXPIRE', KEYS[1], ARGV[1])
 end
-return current
+local pttl = redis.call('PTTL', KEYS[1])
+return {current, pttl}
 `;
 
 /**
@@ -33,15 +35,18 @@ export function rateLimit(options: RateLimitOptions): RequestHandler {
     const key = `rl:${keyPrefix}:${identity}`;
 
     let current: number;
+    let pttl: number;
     try {
-      current = (await redis.eval(LUA_SCRIPT, 1, key, windowMs)) as number;
+      [current, pttl] = (await redis.eval(LUA_SCRIPT, 1, key, windowMs)) as [number, number];
     } catch (err) {
       logger.warn({ err, keyPrefix }, 'Rate limiter Redis error — failing open');
       return next();
     }
 
+    const resetEpochSec = Math.ceil((Date.now() + Math.max(pttl, 0)) / 1000);
     res.setHeader('X-RateLimit-Limit', max);
     res.setHeader('X-RateLimit-Remaining', Math.max(0, max - current));
+    res.setHeader('X-RateLimit-Reset', resetEpochSec);
 
     if (current > max) {
       throw new RateLimitError();

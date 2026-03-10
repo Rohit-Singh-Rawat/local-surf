@@ -28,7 +28,7 @@ export function validate(schemas: ValidationSchemas) {
       }
       validated[key as keyof typeof validated] = result.data;
       if (key === 'body' || key === 'params') {
-        (req as Record<string, unknown>)[key] = result.data;
+        (req as unknown as Record<string, unknown>)[key] = result.data;
       }
     }
     (req as ValidatedRequest).validated = validated;
