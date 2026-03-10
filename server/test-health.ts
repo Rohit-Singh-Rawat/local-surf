@@ -14,17 +14,15 @@ redis.on('connect', () => console.log('Redis connect event fired'));
 // Give redis a moment to connect
 await new Promise((r) => setTimeout(r, 1500));
 
-const [dbResult, redisResult] = await Promise.allSettled([
-  db.execute(sql`SELECT 1`),
-  redis.ping(),
-]);
+const [dbResult, redisResult] = await Promise.allSettled([db.execute(sql`SELECT 1`), redis.ping()]);
 
 console.log('DB result status:', dbResult.status);
 if (dbResult.status === 'rejected') console.error('DB reason:', (dbResult.reason as Error).message);
 else console.log('DB value (first row):', dbResult.value[0]);
 
 console.log('Redis result status:', redisResult.status);
-if (redisResult.status === 'rejected') console.error('Redis reason:', (redisResult.reason as Error).message);
+if (redisResult.status === 'rejected')
+	console.error('Redis reason:', (redisResult.reason as Error).message);
 else console.log('Redis value:', redisResult.value);
 
 await queryClient.end();

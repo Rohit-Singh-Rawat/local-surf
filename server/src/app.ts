@@ -27,7 +27,7 @@ app.use(cookieParser());
 app.use(passport.initialize());
 app.use(requestLogger);
 app.get('/', (_, res) => {
-  res.send('Hello World');
+	res.send('Hello World');
 });
 
 app.use('/api/health', healthRoutes);
@@ -39,7 +39,7 @@ app.use('/api/shares', shareRoutes);
 app.use('/api/trash', trashRoutes);
 
 app.use((_req, res) => {
-  res.status(404).json(errorResponse('NOT_FOUND', 'Route not found'));
+	res.status(404).json(errorResponse('NOT_FOUND', 'Route not found'));
 });
 
 app.use(errorHandler);

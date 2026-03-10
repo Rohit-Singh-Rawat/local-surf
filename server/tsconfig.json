@@ -1,19 +1,21 @@
 {
   "compilerOptions": {
-    "target": "ESNext",
-    "module": "ESNext",
-    "moduleResolution": "bundler",
-    "strict": true,
-    "skipLibCheck": true,
-    "esModuleInterop": true,
-    "forceConsistentCasingInFileNames": true,
-    "resolveJsonModule": true,
-    "isolatedModules": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "noFallthroughCasesInSwitch": true,
-    "types": ["bun-types"]
-  },
+		"target": "ESNext",
+		"module": "ESNext",
+		"moduleResolution": "bundler",
+		"strict": true,
+		"skipLibCheck": true,
+		"esModuleInterop": true,
+		"forceConsistentCasingInFileNames": true,
+		"resolveJsonModule": true,
+		"isolatedModules": true,
+		"noUnusedLocals": true,
+		"noUnusedParameters": true,
+		"outDir": "./dist",
+		"baseUrl": "./src",
+		"noFallthroughCasesInSwitch": true,
+		"types": ["bun-types"]
+	},
   "include": ["src/**/*.ts"],
   "exclude": ["node_modules"]
 }
