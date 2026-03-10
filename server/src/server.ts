@@ -1,4 +1,4 @@
-import { app } from './app';
+import  app  from './app';
 import { queryClient } from './config/db';
 import { env } from './config/env';
 import { redis } from './config/redis';

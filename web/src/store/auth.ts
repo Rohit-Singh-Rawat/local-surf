@@ -1,4 +1,5 @@
 import { Store } from '@tanstack/store'
+import { clearSessionCookie } from '@/lib/session-cookie'
 
 export interface AuthUser {
   id: string
@@ -48,10 +49,7 @@ export function setAuth(user: AuthUser) {
 export function clearAuth() {
   authStore.setState(() => ({ user: null }))
   localStorage.removeItem(USER_STORAGE_KEY)
-  // Clear the non-httpOnly session indicator so initAuth skips /api/users/me on the next load.
-  if (typeof window !== 'undefined') {
-    document.cookie = `ls_session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT`
-  }
+  clearSessionCookie()
 }
 
 let authResolve: (val: boolean) => void

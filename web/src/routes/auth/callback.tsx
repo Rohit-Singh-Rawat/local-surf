@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useEffect, useRef } from 'react'
 import { api } from '@/lib/api'
+import { setSessionCookie } from '@/lib/session-cookie'
 import { type AuthUser, setAuth, clearAuth } from '@/store/auth'
 
 export const Route = createFileRoute('/auth/callback')({
@@ -32,6 +33,7 @@ function AuthCallbackPage() {
       .post<void>('/api/auth/exchange', { code })
       .then(() => api.get<AuthUser>('/api/users/me'))
       .then((user) => {
+        setSessionCookie()
         setAuth(user)
         navigate({ to: '/drive', replace: true })
       })

@@ -1,4 +1,5 @@
 import { env } from '@/env'
+import { setSessionCookie } from '@/lib/session-cookie'
 import { clearAuth } from '@/store/auth'
 
 export class ApiError extends Error {
@@ -27,7 +28,10 @@ function silentRefresh(): Promise<boolean> {
     method: 'POST',
     credentials: 'include',
   })
-    .then((res) => res.ok)
+    .then((res) => {
+      if (res.ok) setSessionCookie()
+      return res.ok
+    })
     .catch(() => false)
     .finally(() => {
       pendingRefresh = null
@@ -58,7 +62,9 @@ async function request<T>(
     throw new ApiError('UNAUTHORIZED', 'Session expired. Please sign in again.')
   }
 
-  const json = (await res.json()) as ApiResponse<T>
+  const text = await res.text()
+  if (!text) return undefined as T
+  const json = JSON.parse(text) as ApiResponse<T>
   if (!json.success) throw new ApiError(json.error.code, json.error.message)
   return json.data
 }

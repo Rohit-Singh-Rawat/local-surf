@@ -1,6 +1,6 @@
 import { redirect } from '@tanstack/react-router'
-import { hasSessionCookie } from './auth-functions'
 import type { authStore, authPromise } from '@/store/auth'
+import { hasSessionCookie } from './auth-functions'
 
 export async function guardAuthenticated(ctx: {
   auth: typeof authStore
@@ -8,8 +8,8 @@ export async function guardAuthenticated(ctx: {
 }) {
   if (typeof window === 'undefined') {
     const hasSession = await hasSessionCookie()
-    if (!hasSession) throw redirect({ to: '/login', replace: true })
-    return
+    if (hasSession) return
+    throw redirect({ to: '/login', replace: true })
   }
 
   await ctx.authPromise

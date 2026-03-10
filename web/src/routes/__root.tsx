@@ -67,16 +67,7 @@ export const Route = createRootRouteWithContext<RouterContext>()({
 
 function RootDocument({ children }: { children: React.ReactNode }) {
   useEffect(() => {
-    // The access token is an httpOnly cookie — the browser sends it automatically.
-    // On page load we just call /api/users/me. If the token is expired, the api
-    // client fires one silent refresh (singleton promise — safe under concurrent calls),
-    // rotates both cookies, and retries. No manual token management needed here.
     const initAuth = async () => {
-      if (!document.cookie.includes('ls_session=1')) {
-        clearAuth()
-        return resolveAuth(false)
-      }
-
       try {
         const user = await api.get<AuthUser>('/api/users/me')
         setAuth(user)
