@@ -5,13 +5,14 @@ import { type AuthUser, setAuth, clearAuth } from '@/store/auth'
 
 export const Route = createFileRoute('/auth/callback')({
   validateSearch: (search: Record<string, unknown>) => ({
-    token: typeof search.token === 'string' ? search.token : null,
+    // Server sends a short-lived opaque code, not the JWT, to keep tokens out of URLs.
+    code: typeof search.code === 'string' ? search.code : null,
   }),
   component: AuthCallbackPage,
 })
 
 function AuthCallbackPage() {
-  const { token } = Route.useSearch()
+  const { code } = Route.useSearch()
   const navigate = useNavigate()
   // Guard against React Strict Mode double-invocation
   const handled = useRef(false)
@@ -20,27 +21,25 @@ function AuthCallbackPage() {
     if (handled.current) return
     handled.current = true
 
-    if (!token) {
+    if (!code) {
       navigate({ to: '/login', replace: true })
       return
     }
 
-    // Temporarily store the token so api.get can attach it as Authorization header
-    import('@/store/auth').then(({ authStore }) => {
-      authStore.setState((s) => ({ ...s, accessToken: token }))
-
-      api
-        .get<AuthUser>('/api/users/me')
-        .then((user) => {
-          setAuth(user, token)
-          navigate({ to: '/drive', replace: true })
-        })
-        .catch(() => {
-          clearAuth()
-          navigate({ to: '/login', replace: true })
-        })
-    })
-  }, [token, navigate])
+    // Exchange the one-time code. The server sets the access_token as an httpOnly cookie;
+    // this response has no body — the client never touches the raw JWT.
+    api
+      .post<void>('/api/auth/exchange', { code })
+      .then(() => api.get<AuthUser>('/api/users/me'))
+      .then((user) => {
+        setAuth(user)
+        navigate({ to: '/drive', replace: true })
+      })
+      .catch(() => {
+        clearAuth()
+        navigate({ to: '/login', replace: true })
+      })
+  }, [code, navigate])
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background">

@@ -3,20 +3,25 @@ import {
   Scripts,
   createRootRouteWithContext,
 } from '@tanstack/react-router'
-import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
-import { TanStackDevtools } from '@tanstack/react-devtools'
+import { lazy, Suspense, useEffect } from 'react'
 import TanStackQueryProvider from '@/integrations/tanstack-query/root-provider'
-import TanStackQueryDevtools from '@/integrations/tanstack-query/devtools'
 import appCss from '../styles.css?url'
 import type { QueryClient } from '@tanstack/react-query'
-
-import { authStore } from '@/store/auth'
+import { authStore, resolveAuth, setAuth, clearAuth } from '@/store/auth'
+import { api } from '@/lib/api'
+import type { AuthUser } from '@/store/auth'
 
 interface RouterContext {
   queryClient: QueryClient
   auth: typeof authStore
   authPromise: Promise<boolean>
 }
+
+// Dev tools are lazy-loaded so they are excluded from the production bundle entirely.
+// Vite dead-code-eliminates the import when import.meta.env.DEV is false.
+const DevTools = import.meta.env.DEV
+  ? lazy(() => import('./__dev-tools'))
+  : null
 
 function NotFound() {
   return (
@@ -59,18 +64,13 @@ export const Route = createRootRouteWithContext<RouterContext>()({
   shellComponent: RootDocument,
 })
 
-import { useEffect } from 'react'
-import { resolveAuth, setAuth, clearAuth } from '@/store/auth'
-import { api } from '@/lib/api'
-import type { AuthUser } from '@/store/auth'
-
 function RootDocument({ children }: { children: React.ReactNode }) {
   useEffect(() => {
-    const authenticate = async () => {
-      if (authStore.state.accessToken) {
-        return resolveAuth(true)
-      }
-      
+    // The access token is an httpOnly cookie — the browser sends it automatically.
+    // On page load we just call /api/users/me. If the token is expired, the api
+    // client fires one silent refresh (singleton promise — safe under concurrent calls),
+    // rotates both cookies, and retries. No manual token management needed here.
+    const initAuth = async () => {
       if (!document.cookie.includes('ls_session=1')) {
         clearAuth()
         return resolveAuth(false)
@@ -78,21 +78,15 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 
       try {
         const user = await api.get<AuthUser>('/api/users/me')
-        const token = authStore.state.accessToken
-        if (token) {
-          setAuth(user, token)
-          resolveAuth(true)
-        } else {
-          clearAuth()
-          resolveAuth(false)
-        }
+        setAuth(user)
+        resolveAuth(true)
       } catch {
         clearAuth()
         resolveAuth(false)
       }
     }
 
-    authenticate()
+    initAuth()
   }, [])
 
   return (
@@ -103,13 +97,11 @@ function RootDocument({ children }: { children: React.ReactNode }) {
       <body className="font-sans antialiased wrap-anywhere selection:bg-[rgba(79,184,178,0.24)]" suppressHydrationWarning>
         <TanStackQueryProvider>
           {children}
-          <TanStackDevtools
-            config={{ position: 'bottom-right' }}
-            plugins={[
-              { name: 'Router', render: <TanStackRouterDevtoolsPanel /> },
-              TanStackQueryDevtools,
-            ]}
-          />
+          {DevTools && (
+            <Suspense>
+              <DevTools />
+            </Suspense>
+          )}
         </TanStackQueryProvider>
         <Scripts />
       </body>

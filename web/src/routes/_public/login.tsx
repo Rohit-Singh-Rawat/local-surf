@@ -13,19 +13,19 @@ function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen w-full   overflow-hidden bg-background">
+    <div className="flex min-h-[100dvh] w-full bg-background overflow-x-hidden">
       {/* Left: auth panel - taking remaining width */}
-      <div className="z-10 flex flex-1 flex-col items-center justify-center bg-background px-8 py-12">
+      <div className="z-10 flex flex-1 flex-col items-center justify-center bg-background px-6 py-10 md:px-8 md:py-12">
         <div className="w-full max-w-sm">
           {/* Logo */}
-          <div className="mb-12">
+          <div className="mb-8 md:mb-12">
             <Logo />
           </div>
 
-          <h1 className="display-title mb-2 text-3xl font-normal text-foreground">
+          <h1 className="display-title mb-2 text-2xl md:text-3xl font-normal text-foreground">
             Welcome back
           </h1>
-          <p className="mb-8 text-sm text-muted-foreground">
+          <p className="mb-6 md:mb-8 text-sm text-muted-foreground">
             Sign in to continue to your files.
           </p>
 
@@ -39,7 +39,7 @@ function LoginPage() {
             Continue with Google
           </button>
 
-          <p className="mt-8 text-center text-xs text-muted-foreground">
+          <p className="mt-6 md:mt-8 text-center text-xs text-muted-foreground">
             By continuing, you agree to our{' '}
             <a href="#" className="text-foreground underline underline-offset-2">
               Terms of Service
@@ -51,7 +51,7 @@ function LoginPage() {
             .
           </p>
 
-          <div className="mt-10 border-t border-border pt-6 text-center">
+          <div className="mt-8 md:mt-10 border-t border-border pt-6 text-center">
             <Link
               to="/"
               className="text-sm text-muted-foreground no-underline transition hover:text-foreground"
@@ -64,7 +64,7 @@ function LoginPage() {
 
       {/* Right: Full-height image "stuck" to the right */}
       <div className="hidden xl:flex shrink-0 bg-secondary/30">
-        <div className="rise-in h-screen overflow-hidden">
+        <div className="rise-in h-[100dvh] overflow-hidden">
           <img 
             src="/images/auth.png" 
             alt="LocalSurf Interface Preview" 
