@@ -31,7 +31,7 @@ const OAUTH_STATE_COOKIE = 'oauth_state';
 const OAUTH_STATE_COOKIE_OPTIONS = {
 	httpOnly: true,
 	secure: env.NODE_ENV === 'production',
-	sameSite: (env.NODE_ENV === 'production' ? 'none' : 'lax') as const,
+	sameSite: env.NODE_ENV === 'production' ? ('none' as const) : ('lax' as const),
 	// Only needs to survive the OAuth redirect round-trip
 	maxAge: 5 * 60 * 1000,
 	path: '/api/auth',
