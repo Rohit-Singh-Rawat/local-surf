@@ -7,11 +7,15 @@ import { getAuth } from '../../lib/auth-utils';
 import { ACCESS_TOKEN_EXPIRY_MS, REFRESH_TOKEN_EXPIRY_MS } from '../../lib/constants';
 import type { AuthService } from './auth.service';
 
+// In production, frontend and API are often on different origins (e.g. app.vercel.app vs api.vercel.app).
+// SameSite=Lax causes browsers to REJECT cookies set in cross-origin responses. SameSite=None is required.
+const SAME_SITE = env.NODE_ENV === 'production' ? ('none' as const) : ('lax' as const);
+
 const ACCESS_COOKIE = 'access_token';
 const ACCESS_COOKIE_OPTIONS: CookieOptions = {
 	httpOnly: true,
 	secure: env.NODE_ENV === 'production',
-	sameSite: 'lax',
+	sameSite: SAME_SITE,
 	maxAge: ACCESS_TOKEN_EXPIRY_MS,
 	path: '/',
 };
@@ -19,7 +23,7 @@ const REFRESH_COOKIE = 'refresh_token';
 const REFRESH_COOKIE_OPTIONS: CookieOptions = {
 	httpOnly: true,
 	secure: env.NODE_ENV === 'production',
-	sameSite: 'lax',
+	sameSite: SAME_SITE,
 	maxAge: REFRESH_TOKEN_EXPIRY_MS,
 	path: '/api/auth',
 };
@@ -28,7 +32,7 @@ const SESSION_INDICATOR = 'ls_session';
 const SESSION_INDICATOR_OPTIONS: CookieOptions = {
 	httpOnly: false,
 	secure: env.NODE_ENV === 'production',
-	sameSite: 'lax',
+	sameSite: SAME_SITE,
 	maxAge: REFRESH_TOKEN_EXPIRY_MS,
 	path: '/',
 };
@@ -74,9 +78,9 @@ export class AuthController {
 		const token = req.cookies?.[REFRESH_COOKIE] || req.body?.refreshToken;
 		if (token) await this.authService.logout(token);
 
-		res.clearCookie(ACCESS_COOKIE, { path: '/' });
-		res.clearCookie(REFRESH_COOKIE, { path: '/api/auth' });
-		res.clearCookie(SESSION_INDICATOR, { path: '/' });
+		res.clearCookie(ACCESS_COOKIE, { path: '/', secure: env.NODE_ENV === 'production', sameSite: SAME_SITE });
+		res.clearCookie(REFRESH_COOKIE, { path: '/api/auth', secure: env.NODE_ENV === 'production', sameSite: SAME_SITE });
+		res.clearCookie(SESSION_INDICATOR, { path: '/', secure: env.NODE_ENV === 'production', sameSite: SAME_SITE });
 		res.json(success({ message: 'Logged out' }));
 	};
 
@@ -84,9 +88,9 @@ export class AuthController {
 		const { userId } = getAuth(req);
 		await this.authService.logoutAll(userId);
 
-		res.clearCookie(ACCESS_COOKIE, { path: '/' });
-		res.clearCookie(REFRESH_COOKIE, { path: '/api/auth' });
-		res.clearCookie(SESSION_INDICATOR, { path: '/' });
+		res.clearCookie(ACCESS_COOKIE, { path: '/', secure: env.NODE_ENV === 'production', sameSite: SAME_SITE });
+		res.clearCookie(REFRESH_COOKIE, { path: '/api/auth', secure: env.NODE_ENV === 'production', sameSite: SAME_SITE });
+		res.clearCookie(SESSION_INDICATOR, { path: '/', secure: env.NODE_ENV === 'production', sameSite: SAME_SITE });
 		res.json(success({ message: 'All sessions revoked' }));
 	};
 }

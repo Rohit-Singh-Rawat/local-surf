@@ -31,7 +31,7 @@ const OAUTH_STATE_COOKIE = 'oauth_state';
 const OAUTH_STATE_COOKIE_OPTIONS = {
 	httpOnly: true,
 	secure: env.NODE_ENV === 'production',
-	sameSite: 'lax' as const,
+	sameSite: (env.NODE_ENV === 'production' ? 'none' : 'lax') as const,
 	// Only needs to survive the OAuth redirect round-trip
 	maxAge: 5 * 60 * 1000,
 	path: '/api/auth',
@@ -70,7 +70,11 @@ router.get(
 		}
 
 		// Consume the state cookie — it is single-use.
-		res.clearCookie(OAUTH_STATE_COOKIE, { path: '/api/auth' });
+		res.clearCookie(OAUTH_STATE_COOKIE, {
+			path: '/api/auth',
+			secure: env.NODE_ENV === 'production',
+			sameSite: env.NODE_ENV === 'production' ? 'none' : 'lax',
+		});
 
 		return new Promise<void>((resolve, reject) => {
 			passport.authenticate(
